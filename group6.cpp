@@ -178,5 +178,8 @@ CardSet Group6::getHandByPoint() {
 
 // カードセットのポイントを返す
 int Group6::getPoint(const CardSet& cs) {
-  return 0;
+  int point = 0;
+  point += cs.size() * 100;      // カード枚数が多いほど優先
+  point -= cs.at(0).strength();  // カードが弱いほど優先
+  return point;
 }
