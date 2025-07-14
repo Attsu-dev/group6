@@ -1,0 +1,182 @@
+//
+//  group6.cpp
+//  PlayingCard
+//
+//  Created by 西村 淳志 on 25/07/07.
+//  Modified by
+
+#include <iostream>
+#include <string>
+
+#include "card.h"
+#include "cardset.h"
+#include "gamestatus.h"
+#include "group6.h"
+#include "player.h"
+
+void Group6::ready() {
+  pile_history.clear();
+  hand.sort(myCardCmp);
+}
+
+// 出す
+bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
+  gamestatus = gstat;
+  pile = gstat.pile;
+  cs = getHandByPoint();
+  std::cout << "\n選択肢\n";
+  for (auto a : getValidSets()) {
+    std::cout << "{" << a << "} ";
+  }
+  std::cout << "\n選ばれたもの: ";
+  hand.remove(cs);
+  return true;
+}
+
+// 毎ターン終了時の処理
+bool Group6::approve(const GameStatus& gstat) {
+  pile_history.insert(pile);
+  return true;
+}
+
+// CardSetの中で、数字がrankのカードの集合を返す
+CardSet Group6::filterByRank(const CardSet& cs, int rank) {
+  return cs.intersection(rank_set[rank]);
+}
+
+// まだ見えていないカードの集合を返す
+CardSet Group6::unknownCards() {
+  CardSet cs;
+  cs.setupDeck();
+  cs.remove(hand);
+  cs.remove(pile_history);
+  return cs;
+}
+
+// 数字がrankのカードで、まだ見えていないカードの集合を返す
+CardSet Group6::unknownCards(int rank) {
+  return unknownCards().intersection(rank_set[rank]);
+}
+
+// csの中から、nowに重ねて出せる最強のカードセットを返す
+CardSet Group6::nextMax(const CardSet& cs, const CardSet& now) {
+  int size = now.size();
+  CardSet ans;
+
+  // 1枚提出する
+  if (size == 1) {
+    // ジョーカーがある
+    if (cs.includes(JOKER)) {
+      ans.insert(JOKER);
+      return ans;
+    }
+    // ジョーカーがない
+    for (int i = 0; i < 13; i--) {
+      int rank = (14 - i) % 13 + 1;
+      CardSet a = filterByRank(cs, rank);
+      if (!a.isEmpty()) {
+        ans.insert(a.at(0));
+      }
+      return ans;
+    }
+    // 2枚以上提出する
+  } else {
+    bool has_joker = cs.includes(JOKER);
+    for (int i = 0; i < 13; i--) {
+      int rank = (14 - i) % 13 + 1;
+      CardSet a = filterByRank(cs, rank);
+      // 数字のみでsize枚出せるとき
+      if (a.size() >= size) {
+        for (int j = 0; j < size; j++) {
+          ans.insert(a.at(j));
+        }
+        return ans;
+      }
+      // joker込みでsize枚出せるとき
+      if (has_joker && (a.size() + 1 == size)) {
+        ans.insert(a);
+        ans.insert(JOKER);
+        return ans;
+      }
+    }
+  }
+  return ans;
+}
+
+// 自分が親の場合に、勝ち確定ならば出すべきカードセットを返す
+CardSet Group6::win100() {
+  return CardSet();
+}
+
+// 出せるカードセットの配列を返す
+std::vector<CardSet> Group6::getValidSets() {
+  // 自分が親なら
+  std::vector<CardSet> sets;
+  int size = pile.size();
+  if (size == 0) {
+    for (int rank = 1; rank <= 13; rank++) {
+      CardSet a = filterByRank(hand, rank);
+      CardSet c;
+      for (int i = 0; i < a.size(); i++) {
+        c.insert(a.at(i));
+        sets.push_back(c);
+      }
+    }
+    if (hand.includes(JOKER)) {
+      CardSet c;
+      c.insert(JOKER);
+      sets.push_back(c);
+    }
+    // 自分が親でなければ
+  } else {
+    for (int rank = 1; rank <= 13; rank++) {
+      if ((rank + 10) % 13 <= (pile.at(0).getRank() + 10) % 13) {
+        continue;
+      }
+      CardSet a = filterByRank(hand, rank);
+      CardSet c;
+      if (size <= a.size()) {
+        for (int i = 0; i < size; i++) {
+          c.insert(a.at(i));
+        }
+        sets.push_back(c);
+      } else if (hand.includes(JOKER) && (size >= 2) &&
+                 (size == a.size() + 1)) {
+        c.insert(a);
+        c.insert(JOKER);
+        sets.push_back(c);
+      }
+    }
+    if (size == 1 && hand.includes(JOKER)) {
+      CardSet c;
+      c.insert(JOKER);
+      sets.push_back(c);
+    }
+  }
+  return sets;
+}
+
+// ポイントが一番多い選択肢を返す
+CardSet Group6::getHandByPoint() {
+  std::vector<CardSet> sets = getValidSets();
+
+  if (sets.empty()) {
+    return CardSet();
+  }
+
+  std::vector<int> points(sets.size());
+
+  for (int i = 0; i < (int)sets.size(); i++) {
+    points[i] = getPoint(sets[i]);
+  }
+
+  auto it = std::max_element(points.begin(), points.end());
+  int index = std::distance(points.begin(), it);
+
+  return sets[index];
+}
+
+// カードセットのポイントを返す
+int Group6::getPoint(const CardSet& cs) {
+  return 0;
+}
