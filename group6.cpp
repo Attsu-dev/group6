@@ -267,6 +267,9 @@ CardSet Group6::getHandByPoint() {
     points[i] = getPoint(sets[i]);
   }
 
+  sets.push_back(CardSet());
+  points.push_back(-1000000);
+
   auto it = std::max_element(points.begin(), points.end());
   int index = std::distance(points.begin(), it);
 
@@ -281,8 +284,10 @@ bool Group6::is_strongest(const CardSet& cs) {
 // カードセットのポイントを返す
 int Group6::getPoint(const CardSet& cs) {
   int point = 0;
-  point -= cs.size();                  // カード枚数が多いほど優先
+  point -= cs.size();                  // カード枚数が少ないほど優先
   point -= cs.at(0).strength() * 100;  // カードが弱いほど優先
+
+  // ペアを崩すのに番を取れない手はカスなので最弱
   if (cs.size() < filterByRank(hand, cs.at(0).rank()).size()) {
     if (!is_strongest(cs))
       return INT32_MIN;
