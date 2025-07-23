@@ -14,41 +14,40 @@
 #include "gamestatus.h"
 #include "player.h"
 
-//
-// すこしルールを覚えたプレイヤーのクラス
-// Player クラスを継承して作成するクラスのサンプル
-//
 class Group6 : public Player {
-  CardSet pile_history;  // 今までに捨てられたすべてカードの集合
+  /* 変数 */
+  CardSet pile;                    // 現在の場のカード
+  CardSet pile_history;            // 今までに捨てられたすべてのカードの集合
+  CardSet unknownCards;            // まだ見えていないカードの集合
+  std::vector<CardSet> validSets;  // 出すことのできるカードの集合の配列
+  GameStatus gamestatus;           // 現在のゲームステータス
+
+  /* 定数 */
   CardSet rank_set[16];  // 数字ごとのカード集合
-  Card JOKER;
-  GameStatus gamestatus;
-  CardSet pile;
+  Card JOKER;            // ジョーカー
+  CardSet PASS;          // パスするときに返す
 
   /*------------------ 自作ツール ---------------------*/
-  // CardSetの中で、数字がrankのカードの集合を返す
-  CardSet filterByRank(const CardSet& cs, int rank);
-
-  // まだ見えていないカードの集合を返す
-  CardSet unknownCards();
-
-  // 数字がrankのカードで、まだ見えていないカードの集合を返す
-  CardSet unknownCards(int rank);
-
-  // csの中から、nowに重ねて出せる最強のカードセットを返す
-  CardSet nextMax(const CardSet& cs, const CardSet& now);
-
-  // 勝ち確定ならば出すべきカードセットを返す
-  CardSet win100();
-
-  // 出せるカードセットの配列を返す
-  std::vector<CardSet> getValidSets();
+  // カードセットのポイントを返す
+  int getPoint(const CardSet& cs);
 
   // ポイントが一番多い選択肢を返す
   CardSet getHandByPoint();
 
-  // カードセットのポイントを返す
-  int getPoint(const CardSet& cs);
+  // 勝ち確定ならば出すべきカードセットを返す
+  CardSet win100();
+
+  // 出せるカードセットの選択肢を配列で返す
+  std::vector<CardSet> getValidSets();
+
+  // まだ見えていないカードの集合を返す
+  CardSet getUnknownCards();
+
+  // CardSetの中で、数字がrankのカードの集合を返す
+  CardSet filterByRank(const CardSet& cs, int rank);
+
+  // csの中から、nowに重ねて出せる最強のカードセットを返す
+  CardSet nextMax(const CardSet& cs, const CardSet& now);
 
   // csを出した場合、確実に自分のターンが回ってくるかどうか
   bool is_strongest(const CardSet& cs);
