@@ -50,6 +50,9 @@ class Group6 : public Player {
   // カードセットのポイントを返す
   int getPoint(const CardSet& cs);
 
+  // csを出した場合、確実に自分のターンが回ってくるかどうか
+  bool is_strongest(const CardSet& cs);
+
  public:
   Group6(const char* name = "Group6") : Player(name) {
     // JOKERの初期化

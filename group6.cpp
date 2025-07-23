@@ -273,10 +273,19 @@ CardSet Group6::getHandByPoint() {
   return sets[index];
 }
 
+// csを出した場合、確実に自分のターンが回ってくるかどうか
+bool Group6::is_strongest(const CardSet& cs) {
+  return nextMax(unknownCards(), cs).isEmpty();
+}
+
 // カードセットのポイントを返す
 int Group6::getPoint(const CardSet& cs) {
   int point = 0;
-  point += cs.size() * 100;      // カード枚数が多いほど優先
-  point -= cs.at(0).strength();  // カードが弱いほど優先
+  point -= cs.size();                  // カード枚数が多いほど優先
+  point -= cs.at(0).strength() * 100;  // カードが弱いほど優先
+  if (cs.size() < filterByRank(hand, cs.at(0).rank()).size()) {
+    if (!is_strongest(cs))
+      return INT32_MIN;
+  }
   return point;
 }
