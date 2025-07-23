@@ -41,6 +41,8 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
   if (!win.isEmpty()) {
     cs = win;
     hand.remove(win);
+    if (!hand.isEmpty())
+      std::cout << "勝ち確定!\n";
     return true;
   }
   cs = getHandByPoint();
@@ -147,6 +149,8 @@ CardSet Group6::win100() {
     std::vector<CardSet> ok_set, ng_set;
     for (int rank = 1; rank <= 13; rank++) {
       CardSet a = filterByRank(c, rank);
+      if (a.isEmpty())
+        continue;
       if (nextMax(unknown, a).isEmpty()) {
         ok_set.push_back(a);
       } else {
