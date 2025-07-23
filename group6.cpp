@@ -23,11 +23,31 @@ void Group6::ready() {
 bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
   gamestatus = gstat;
   pile = gstat.pile;
-  cs = getHandByPoint();
-  std::cout << "\n選択肢\n";
-  for (auto a : getValidSets()) {
-    std::cout << "{" << a << "} ";
+
+  auto valid = getValidSets();
+  CardSet unk = unknownCards();
+  std::cout << "\n-----デバッグ用出力-----\n";
+  std::cout << "敵のカード: " << unk << std::endl;
+  std::cout << "捨てられたカード: " << pile_history << std::endl;
+  std::cout << "場のカード: " << pile << std::endl;
+  std::cout << "手札: " << hand << std::endl;
+  for (auto v : valid) {
+    std::cout << "選択肢:" << v
+              << ", 次出される可能性のあるもの:" << nextMax(unk, v)
+              << std::endl;
   }
+
+  CardSet win = win100();
+  if (!win.isEmpty()) {
+    cs = win;
+    hand.remove(win);
+    return true;
+  }
+  cs = getHandByPoint();
+  // std::cout << "\n選択肢\n";
+  // for (auto a : getValidSets()) {
+  //   std::cout << "{" << a << "} ";
+  // }
   std::cout << "\n選ばれたもの: ";
   hand.remove(cs);
   return true;
@@ -35,7 +55,8 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
 
 // 毎ターン終了時の処理
 bool Group6::approve(const GameStatus& gstat) {
-  pile_history.insert(pile);
+  pile_history.insert(gstat.pile);
+  pile_history.sort();
   return true;
 }
 
@@ -63,6 +84,9 @@ CardSet Group6::nextMax(const CardSet& cs, const CardSet& now) {
   int size = now.size();
   CardSet ans;
 
+  if (now.size() == 1 && now.includes(JOKER))
+    return CardSet();
+
   // 1枚提出する
   if (size == 1) {
     // ジョーカーがある
@@ -71,18 +95,22 @@ CardSet Group6::nextMax(const CardSet& cs, const CardSet& now) {
       return ans;
     }
     // ジョーカーがない
-    for (int i = 0; i < 13; i--) {
+    for (int i = 0; i < (13 - now[0].strength()); i++) {
       int rank = (14 - i) % 13 + 1;
       CardSet a = filterByRank(cs, rank);
       if (!a.isEmpty()) {
         ans.insert(a.at(0));
+        return ans;
       }
-      return ans;
     }
     // 2枚以上提出する
   } else {
     bool has_joker = cs.includes(JOKER);
-    for (int i = 0; i < 13; i--) {
+    int now_strength = now.at(0).strength();
+    for (int i = 0; i < now.size(); i++) {
+      now_strength = std::min(now_strength, now.at(i).strength());
+    }
+    for (int i = 0; i < (13 - now_strength); i++) {
       int rank = (14 - i) % 13 + 1;
       CardSet a = filterByRank(cs, rank);
       // 数字のみでsize枚出せるとき
@@ -152,6 +180,7 @@ CardSet Group6::win100() {
     if (nextMax(unknown, ng1).isEmpty()) {
       return ng1;
     }
+    return CardSet();
   };
 
   if (pile.isEmpty()) {
