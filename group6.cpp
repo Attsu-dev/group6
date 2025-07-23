@@ -14,16 +14,29 @@
 #include "group6.h"
 #include "player.h"
 
-// カードセットのポイントを返す (負ならば選ばれない)
-int Group6::getPoint(const CardSet& cs) {
+// カードセットのポイントを返す（親のとき）
+int Group6::getPoint_myTurn(const CardSet& cs) {
   int point = 10000;
-  point -= cs.size();               // カード枚数が少ないほど優先
+  point += cs.size();               // カード枚数が少ないほど優先
+  point -= cs[0].strength() * 100;  // カードが弱いほど優先
+
+  // ペアを崩す手は最弱
+  if (cs.size() < filterByRank(hand, cs[0].rank()).size()) {
+    return -1;  // 負ならば選ばれにくい
+  }
+  return point;
+}
+
+// カードセットのポイントを返す（子のとき）
+int Group6::getPoint_NotMyTurn(const CardSet& cs) {
+  int point = 10000;
+  point += cs.size();               // カード枚数が少ないほど優先
   point -= cs[0].strength() * 100;  // カードが弱いほど優先
 
   // ペアを崩すのに番を取れない手は最弱
-  if (cs.size() < filterByRank(hand, cs[0].rank()).size()) {
-    if (!is_strongest(cs))
-      return -1;
+  if (cs.size() < filterByRank(hand, cs[0].rank()).size() &&
+      !is_strongest(cs)) {
+    return -1;  // 負ならば選ばれない
   }
   return point;
 }
@@ -60,12 +73,17 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
 CardSet Group6::getHandByPoint() {
   std::vector<int> points(validSets.size());
   for (int i = 0; i < (int)validSets.size(); i++) {
-    points[i] = getPoint(validSets[i]);
+    if (pile.isEmpty())
+      points[i] = getPoint_myTurn(validSets[i]);
+    else
+      points[i] = getPoint_NotMyTurn(validSets[i]);
   }
 
-  // パスの選択肢を追加（ポイント = 0）
-  validSets.push_back(CardSet());
-  points.push_back(0);
+  // パスの選択肢を追加 (ポイント = 0)
+  if (!pile.isEmpty()) {
+    validSets.push_back(CardSet());
+    points.push_back(0);
+  }
 
   // 最大値のインデックスを求める
   auto it = std::max_element(points.begin(), points.end());

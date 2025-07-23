@@ -28,8 +28,11 @@ class Group6 : public Player {
   CardSet PASS;          // パスするときに返す
 
   /*------------------ 自作ツール ---------------------*/
-  // カードセットのポイントを返す
-  int getPoint(const CardSet& cs);
+  // カードセットのポイントを返す（親の場合）
+  int getPoint_myTurn(const CardSet& cs);
+
+  // カードセットのポイントを返す（子の場合）
+  int getPoint_NotMyTurn(const CardSet& cs);
 
   // ポイントが一番多い選択肢を返す
   CardSet getHandByPoint();
