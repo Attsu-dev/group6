@@ -38,7 +38,7 @@ class Group6 : public Player {
   // csの中から、nowに重ねて出せる最強のカードセットを返す
   CardSet nextMax(const CardSet& cs, const CardSet& now);
 
-  // 自分が親の場合に、勝ち確定ならば出すべきカードセットを返す
+  // 勝ち確定ならば出すべきカードセットを返す
   CardSet win100();
 
   // 出せるカードセットの配列を返す

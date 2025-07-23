@@ -103,8 +103,72 @@ CardSet Group6::nextMax(const CardSet& cs, const CardSet& now) {
   return ans;
 }
 
-// 自分が親の場合に、勝ち確定ならば出すべきカードセットを返す
+// 勝ち確定ならば出すべきカードセットを返す
 CardSet Group6::win100() {
+  auto valid = getValidSets();
+  CardSet unknown = unknownCards();
+
+  // 出して上がりなら出す
+  if (valid.size() == 1 && valid[0].equal(hand)) {
+    return hand;
+  }
+
+  // 無敵→無敵→...→無敵→ラスト で勝てる場合
+  auto win100_myturn = [&](const CardSet& c) {
+    int joker_num = c.includes(JOKER);
+    std::vector<CardSet> ok_set, ng_set;
+    for (int rank = 1; rank <= 13; rank++) {
+      CardSet a = filterByRank(c, rank);
+      if (nextMax(unknown, a).isEmpty()) {
+        ok_set.push_back(a);
+      } else {
+        ng_set.push_back(a);
+      }
+    }
+    if (ng_set.size() >= 3) {
+      return CardSet();
+    }
+    if (ng_set.size() <= 1) {
+      if (ok_set.size() >= 1) {
+        if (joker_num) {
+          ok_set[0].insert(JOKER);
+        }
+        return ok_set[0];
+      } else {
+        return ng_set[0];
+      }
+    }
+    // ng_set.size() == 2
+    if (joker_num == 0)
+      return CardSet();
+    CardSet ng0 = ng_set[0];
+    CardSet ng1 = ng_set[1];
+
+    ng0.insert(JOKER);
+    if (nextMax(unknown, ng0).isEmpty()) {
+      return ng0;
+    }
+    ng1.insert(JOKER);
+    if (nextMax(unknown, ng1).isEmpty()) {
+      return ng1;
+    }
+  };
+
+  if (pile.isEmpty()) {
+    CardSet w = win100_myturn(hand);
+    if (!w.isEmpty())
+      return w;
+  } else {
+    for (auto v : valid) {
+      CardSet hand_copy(hand);
+      hand_copy.remove(v);
+      if (nextMax(unknown, v).isEmpty() &&
+          !win100_myturn(hand_copy).isEmpty()) {
+        return v;
+      }
+    }
+  }
+
   return CardSet();
 }
 
