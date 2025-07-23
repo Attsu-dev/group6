@@ -79,6 +79,15 @@ CardSet Group6::filterByRank(const CardSet& cs, int rank) {
   return cs.intersection(rank_set[rank]);
 }
 
+// CardSetの中で、最弱のカードを返す
+Card Group6::getWeakestCard(CardSet cs) {
+  if (cs.isEmpty()) {
+    return Card();
+  }
+  cs.sort(myCardCmp);
+  return cs[0];
+}
+
 // まだ見えていないカードの集合を返す
 CardSet Group6::getUnknownCards() {
   CardSet cs;

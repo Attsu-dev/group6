@@ -46,6 +46,9 @@ class Group6 : public Player {
   // CardSetの中で、数字がrankのカードの集合を返す
   CardSet filterByRank(const CardSet& cs, int rank);
 
+  // CardSetの中で、最弱のrankを返す
+  Card getWeakestCard(CardSet cs);
+
   // csの中から、nowに重ねて出せる最強のカードセットを返す
   CardSet nextMax(const CardSet& cs, const CardSet& now);
 
