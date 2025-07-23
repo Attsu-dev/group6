@@ -126,10 +126,7 @@ CardSet Group6::nextMax(const CardSet& cs, const CardSet& now) {
     // 2枚以上提出する
   } else {
     bool has_joker = cs.includes(JOKER);
-    int now_strength = now[0].strength();
-    for (int i = 0; i < now.size(); i++) {
-      now_strength = std::min(now_strength, now[0].strength());
-    }
+    int now_strength = getWeakestCard(now).strength();
     for (int i = 0; i < (13 - now_strength); i++) {
       int rank = (14 - i) % 13 + 1;
       CardSet a = filterByRank(cs, rank);
