@@ -17,12 +17,12 @@
 // カードセットのポイントを返す（親のとき）
 int Group6::getPoint_myTurn(const CardSet& cs) {
   int point = 10000;
-  point += cs.size();               // カード枚数が少ないほど優先
+  point -= cs.size();               // カード枚数が多いほど優先
   point -= cs[0].strength() * 100;  // カードが弱いほど優先
 
   // ペアを崩す手は最弱
   if (cs.size() < filterByRank(hand, cs[0].rank()).size()) {
-    return -1;  // 負ならば選ばれにくい
+    return -1;
   }
   return point;
 }
