@@ -353,7 +353,7 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
         //////  序盤  ////////////
         if (weak_cards + normal_cards >= 7) {
           int rank = current_play.at(0).rank();
-          int op_rank = pile.at(0).rank();
+          // int op_rank = pile.at(0).rank();
           if (current_play.at(0).isJoker() || rank == 2 || rank == 1) {
             current_score -= 50;  // 大きなペナルティ、絶対パス
           }
@@ -373,7 +373,7 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
         ////// 中盤 ////////////
         if (weak_cards + normal_cards < 7 && weak_cards + normal_cards >= 3) {
           int rank = current_play.at(0).rank();
-          int op_rank = pile.at(0).rank();
+          // int op_rank = pile.at(0).rank();
           if (strong_cards == 1) {
             if (current_play.at(0).isJoker() || rank == 1 || rank == 2 ||
                 rank == 13) {
