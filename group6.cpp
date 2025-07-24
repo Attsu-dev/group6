@@ -88,9 +88,342 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
     return true;
   }
 
-  // ポイントが高いものを出す
-  cs = getHandByPoint();
-  hand.remove(cs);
+  Card tmp;
+  int leadSize;
+
+  hand.sort(myCardCmp);  // 手札をソート(弱い方から順に)
+
+  // 手札の種類確認用
+  int weak_cards = 0;
+  int normal_cards = 0;
+  int strong_cards = 0;
+
+  for (int i = 0; i < hand.size(); i++) {
+    Card current_card = hand.at(i);
+    int rank = current_card.rank();  // カードの数字を取得
+
+    if (current_card.isJoker() || rank == 1 || rank == 2) {
+      // 強いカード (A, 2, Joker)
+      strong_cards++;
+    } else if (rank >= 7 && rank <= 13) {
+      // 普通のカード (7, 8, 9, 10, J, Q, K)
+      normal_cards++;
+    } else {
+      // 弱いカード (3, 4, 5, 6)
+      weak_cards++;
+    }
+  }
+
+  std::cout << " [弱:" << weak_cards << " 中:" << normal_cards
+            << " 強:" << strong_cards << "] ";
+
+  bool is_late_game = false;
+  bool more2_is_good = false;
+  const int DANGER_THRESHOLD =
+      3;  // 他のプレイヤーの残り枚数がこの数以下なら危険と判断
+
+  for (int i = 0; i < gstat.numPlayers; i++) {
+    // 自分以外のプレイヤーをチェック
+    if (gstat.playerID[gstat.turnIndex] != gstat.playerID[i] &&
+        gstat.numCards[i] <= 1) {
+      more2_is_good = true;
+      std::cout << " [２枚以上のペアを出したい] ";
+    }
+    if (gstat.playerID[gstat.turnIndex] != gstat.playerID[i] &&
+        gstat.numCards[i] <= DANGER_THRESHOLD) {
+      is_late_game = true;
+      std::cout << " [上がり阻止モード] ";
+      // break; // 危険な相手が一人でも見つかればチェック終了
+    }
+  }
+
+  bool can_win = false;
+  int my_hand[14];
+  int oponent_hand[14];
+  CardSet unk_card = getUnknownCards();
+  int can_flow_cards_num = 0;
+  int cant_flow_cards_num = 0;
+  int need_num_to_flow[14];
+
+  for (int i = 0; i <= 13; i++) {
+    my_hand[i] = 0;
+    oponent_hand[i] = 0;
+  }
+
+  for (int i = 0; i < hand.size(); i++) {
+    if (hand.at(i).rank() == 15) {
+      my_hand[0] = 1;
+    } else {
+      my_hand[hand.at(i).rank()]++;
+    }
+  }
+
+  for (int i = 0; i < unk_card.size(); i++) {
+    if (unk_card.at(i).rank() == 15) {
+      oponent_hand[0] = 1;
+    } else {
+      oponent_hand[unk_card.at(i).rank()]++;
+    }
+  }
+
+  need_num_to_flow[0] = 1;
+  need_num_to_flow[2] = 2;
+  need_num_to_flow[1] = 5;
+  for (int i = 3; i <= 13; i++) {
+    need_num_to_flow[i] = 5;
+  }
+
+  int max_num = 0;
+
+  for (int i = 3; i < 13; i++) {
+    for (int j = i; j < 13; j++) {
+      max_num = 0;
+      if (oponent_hand[j + 1] > max_num) {
+        max_num = oponent_hand[j + 1];
+      }
+    }
+    if (oponent_hand[1] > max_num) {
+      max_num = oponent_hand[1];
+    }
+    if (oponent_hand[2] > max_num) {
+      max_num = oponent_hand[2];
+    }
+    if (oponent_hand[0] > max_num) {
+      max_num = oponent_hand[0];
+    }
+    need_num_to_flow[i] = max_num + 1;
+  }
+
+  max_num = 0;
+  if (oponent_hand[1] > max_num) {
+    max_num = oponent_hand[1];
+  }
+  if (oponent_hand[2] > max_num) {
+    max_num = oponent_hand[2];
+  }
+  if (oponent_hand[0] > max_num) {
+    max_num = oponent_hand[0];
+  }
+  need_num_to_flow[13] = max_num + 1;
+
+  max_num = 0;
+  if (oponent_hand[2] > max_num) {
+    max_num = oponent_hand[2];
+  }
+  if (oponent_hand[0] > max_num) {
+    max_num = oponent_hand[0];
+  }
+  need_num_to_flow[1] = max_num + 1;
+
+  max_num = 0;
+  if (oponent_hand[0] > max_num) {
+    max_num = oponent_hand[0];
+  }
+  need_num_to_flow[2] = max_num + 1;
+
+  for (int i = 0; i <= 13; i++) {
+    if (my_hand[i] >= need_num_to_flow[i]) {
+      can_flow_cards_num++;
+    } else if (my_hand[i] != 0) {
+      cant_flow_cards_num++;
+    }
+  }
+  if (can_flow_cards_num >= 1 && cant_flow_cards_num <= 1) {
+    can_win = true;
+  }
+
+  //////////////////////////////
+  // カードを出す処理
+  ////////////////////////////////
+
+  leadSize = pile.size();
+
+  if (leadSize == 0) {
+    Card weakest_card = hand.at(0);
+
+    if (can_win) {
+      for (int i = 0; i <= 13; i++) {
+        if (my_hand[i] >= 1 && need_num_to_flow[i] <= my_hand[i]) {
+          for (int j = 0; j < hand.size(); j++) {
+            if (i == 0 && hand.at(j).rank() == 15) {
+              cs.insert(hand.at(j));
+            } else if (i != 0 && hand.at(j).rank() == i) {
+              cs.insert(hand.at(j));
+            }
+          }
+          hand.remove(cs);
+          return true;
+        }
+      }
+    }
+
+    if (more2_is_good) {
+      for (int i = 0; i <= 13; i++) {
+        if (2 <= my_hand[i]) {
+          for (int j = 0; j < hand.size(); j++) {
+            if (i == 0 && hand.at(j).rank() == 15) {
+              cs.insert(hand.at(j));
+            } else if (i != 0 && hand.at(j).rank() == i) {
+              cs.insert(hand.at(j));
+            }
+          }
+          hand.remove(cs);
+          return true;
+        }
+      }
+    }
+
+    cs.insert(weakest_card);
+
+    // 2枚目以降のカードを確認し、一番弱いカードと同じランクなら追加する
+    for (int i = 1; i < hand.size(); i++) {
+      if (hand.at(i).rank() == weakest_card.rank()) {
+        cs.insert(hand.at(i));
+      } else {
+        // ランクが違うカードが出てきたら、ペア探しは終了
+        break;
+      }
+    }
+
+    // 決定したカード(cs)を手札から削除して場に出す
+    hand.remove(cs);
+    return true;
+
+  } else {
+    // 場に出せるカードの組み合わせをすべて探す
+    std::vector<CardSet>
+        candidates;  // 出せるカードの組み合わせを保存するリスト
+    Card pile_rank_card = pile.at(0);  // 場に出ているカードの強さの基準
+    // 手札のi枚目から、場の枚数(leadSize)ぶんのカードを確認していく
+    for (int i = 0; i <= hand.size() - leadSize; i++) {
+      // 同じランクのカードがleadSize枚あるかチェック
+      CardSet potential_play;  // 「出せるかもしれないカード」のセット
+      Card first_card = hand.at(i);
+
+      // 場に出ているカードより強いかチェック
+      if (first_card.isGreaterThan(pile_rank_card)) {
+        potential_play.insert(first_card);
+        for (int j = 1; j < leadSize; j++) {
+          if (hand.at(i + j).rank() == first_card.rank()) {
+            potential_play.insert(hand.at(i + j));
+          }
+        }
+        if (potential_play.size() == leadSize) {
+          candidates.push_back(potential_play);
+          // 同じランクのカードを再度チェックしないように、iをジャンプさせる
+          i += (leadSize - 1);
+        }
+      }
+    }
+
+    if (!candidates.empty()) {  // 候補が1つ以上見つかった場合
+
+      CardSet best_play;  // 最もスコアが高かった手
+      int max_score =
+          -1000;  // 最高スコアを記録する変数（非常に低い値で初期化）
+      // 全ての候補手のスコアを計算する
+      for (int i = 0; i < static_cast<int>(candidates.size()); i++) {
+        CardSet current_play = candidates.at(i);
+        int current_score = 0;  // この手のスコア
+        // --- スコア計算 ---
+        // 1. 基本点：弱いカードほど価値が高い（温存できるから）
+        current_score +=
+            15 - current_play.at(0)
+                     .strength();  // 3(強さ1)なら+14点、A(強さ12)なら+3点
+        // 2. ボーナス点：上がりそうな相手がいるか？
+
+        if (is_late_game) {
+          // 相手を阻止できる手は非常に価値が高い！
+          current_score += 50;  // 絶対出す
+        }
+
+        if (can_win) {
+          if (current_play.at(0).rank() == 15) {
+            // 流せるカードを出す｡
+            current_score += 100;
+          } else if (my_hand[current_play.at(0).rank()] ==
+                         current_play.size() &&
+                     my_hand[current_play.at(0).rank()] >=
+                         need_num_to_flow[current_play.at(0).rank()]) {
+            // 流せるカードを出す｡
+            current_score += 100;
+          }
+        }
+
+        //////  序盤  ////////////
+        if (weak_cards + normal_cards >= 7) {
+          int rank = current_play.at(0).rank();
+          int op_rank = pile.at(0).rank();
+          if (current_play.at(0).isJoker() || rank == 2 || rank == 1) {
+            current_score -= 50;  // 大きなペナルティ、絶対パス
+          }
+
+          // if ((op_rank == 3 || op_rank == 4) &&
+          //     my_hand[11] + my_hand[12] >= 3) {
+          //   if (rank == 11 || rank == 12) {
+          //     current_score += 50;
+          //   }
+          // }
+
+          if (my_hand[rank] != current_play.size()) {
+            current_score -= 50;
+          }
+        }
+
+        ////// 中盤 ////////////
+        if (weak_cards + normal_cards < 7 && weak_cards + normal_cards >= 3) {
+          int rank = current_play.at(0).rank();
+          int op_rank = pile.at(0).rank();
+          if (strong_cards == 1) {
+            if (current_play.at(0).isJoker() || rank == 1 || rank == 2 ||
+                rank == 13) {
+              current_score -= 30;  // 大きなペナルティ、絶対パス
+            }
+          }
+          if (my_hand[rank] != current_play.size()) {
+            current_score -= 50;
+          }
+        }
+
+        ////// 終盤 ////////////
+        /*if (weak_cards + normal_cards <= 4 && weak_cards + normal_cards > 2) {
+
+          }*/
+
+        ////// 最終盤 ////////////
+        if (weak_cards + normal_cards <= 2) {
+          current_score =
+              1000 -
+              current_score;  // 最終盤はスコアを反転させる、強いやつを出す
+          int rank = current_play.at(0).rank();
+          if (my_hand[rank] != current_play.size()) {
+            current_score -= 50;
+          }
+        }
+
+        // --- 最高スコアの更新 ---
+        if (current_score > max_score) {
+          max_score = current_score;
+          best_play = current_play;
+        }
+      }
+
+      // --- 最終判断 ---
+      // 「パスする(0点)」よりも、最も良い手のスコアが高ければ、その手をプレイ
+      if (max_score > 0) {
+        cs = best_play;
+      } else {
+        std::cout << " [スコアパス] ";
+        cs.clear();
+      }
+      if (!cs.isEmpty()) {
+        hand.remove(cs);
+      }
+      return true;
+    }
+  }
+  // 出せるカードがなければパス
+  cs.clear();
   return true;
 }
 
