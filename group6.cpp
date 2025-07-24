@@ -16,9 +16,12 @@
 
 // カードセットのポイントを返す（親のとき）
 int Group6::getPoint_myTurn(const CardSet& cs) {
+  int size = cs.size();
+  int strength = cs[0].strength();
+
   int point = 10000;
-  point -= cs.size();               // カード枚数が多いほど優先
-  point -= cs[0].strength() * 100;  // カードが弱いほど優先
+  point -= size;            // カード枚数が多いほど優先
+  point -= strength * 100;  // カードが弱いほど優先
 
   // ペアを崩す手は最弱
   if (cs.size() < filterByRank(hand, cs[0].rank()).size()) {
@@ -30,8 +33,26 @@ int Group6::getPoint_myTurn(const CardSet& cs) {
 // カードセットのポイントを返す（子のとき）
 int Group6::getPoint_NotMyTurn(const CardSet& cs) {
   int point = 10000;
-  point += cs.size();               // カード枚数が少ないほど優先
-  point -= cs[0].strength() * 100;  // カードが弱いほど優先
+  int size = cs.size();
+  int strength = cs[0].strength();
+  point += cs.size();       // カード枚数が少ないほど優先
+  point -= strength * 100;  // カードが弱いほど優先
+
+  if (is_strongest(cs) && is_strongest(pile)) {
+    if ((gamestatus.numPlayers + gamestatus.turnIndex - lastSubmiterIndex) %
+            gamestatus.numPlayers <
+        gamestatus.numPlayers / 2) {
+      return -1;  // 自分のターンが回ってくるのが早くなるのでパスで良い
+    } else {
+      point += 10;  // 自分のターンが回ってくるのが遅くなる
+    }
+  }
+
+  if (sumCardsNum > 25) {
+    if (strength >= 12 && size >= 2) {
+      point -= 1000;
+    }
+  }
 
   // ペアを崩すのに番を取れない手は最弱
   if (cs.size() < filterByRank(hand, cs[0].rank()).size() &&
@@ -48,6 +69,10 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
   pile = gstat.pile;
   unknownCards = getUnknownCards();
   validSets = getValidSets();
+  sumCardsNum = 0;
+  for (int i = 0; i < gstat.numPlayers; i++) {
+    sumCardsNum += gstat.numCards[i];
+  }
 
   // 出せるものがないとき、パス
   if (validSets.empty()) {
@@ -309,6 +334,10 @@ void Group6::ready() {
 
 // 毎ターン終了時の処理
 bool Group6::approve(const GameStatus& gstat) {
+  if (!pile.equal(gstat.pile)) {
+    lastSubmiterIndex = gstat.turnIndex;
+  }
+  pile = gstat.pile;
   pile_history.insert(gstat.pile);
   pile_history.sort(myCardCmp);
   return true;

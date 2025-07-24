@@ -21,6 +21,8 @@ class Group6 : public Player {
   CardSet unknownCards;            // まだ見えていないカードの集合
   std::vector<CardSet> validSets;  // 出すことのできるカードの集合の配列
   GameStatus gamestatus;           // 現在のゲームステータス
+  int lastSubmiterIndex;           // 最後にカードを出したプレイヤの添字
+  int sumCardsNum;
 
   /* 定数 */
   CardSet rank_set[16];  // 数字ごとのカード集合
