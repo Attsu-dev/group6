@@ -114,8 +114,8 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
     }
   }
 
-  std::cout << " [弱:" << weak_cards << " 中:" << normal_cards
-            << " 強:" << strong_cards << "] ";
+  // std::cout << " [弱:" << weak_cards << " 中:" << normal_cards
+  //<< " 強:" << strong_cards << "] ";
 
   bool is_late_game = false;
   bool more2_is_good = false;
@@ -127,13 +127,13 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
     if (gstat.playerID[gstat.turnIndex] != gstat.playerID[i] &&
         gstat.numCards[i] <= 1) {
       more2_is_good = true;
-      std::cout << " [２枚以上のペアを出したい] ";
+      // std::cout << " [２枚以上のペアを出したい] ";
     }
     if (gstat.playerID[gstat.turnIndex] != gstat.playerID[i] &&
         gstat.numCards[i] <= DANGER_THRESHOLD) {
       is_late_game = true;
-      std::cout << " [上がり阻止モード] ";
-      // break; // 危険な相手が一人でも見つかればチェック終了
+      // std::cout << " [上がり阻止モード] ";
+      //  break; // 危険な相手が一人でも見つかればチェック終了
     }
   }
 
@@ -413,7 +413,7 @@ bool Group6::follow(const GameStatus& gstat, CardSet& cs) {
       if (max_score > 0) {
         cs = best_play;
       } else {
-        std::cout << " [スコアパス] ";
+        // std::cout << " [スコアパス] ";
         cs.clear();
       }
       if (!cs.isEmpty()) {
