@@ -574,6 +574,23 @@ CardSet Group6::win100() {
     CardSet ng0 = ng_set[0];
     CardSet ng1 = ng_set[1];
 
+    CardSet ng0_next = nextMax(unknownCards, ng0);
+    CardSet hand_copy(hand);
+    hand_copy.remove(ng0);
+    if (!ng0_next.isEmpty() && !nextMax(hand_copy, ng0_next).isEmpty()) {
+      return ng0;
+    }
+
+    CardSet ng1_next = nextMax(unknownCards, ng1);
+    hand_copy = hand;
+    hand_copy.remove(ng1);
+    if (!ng1_next.isEmpty() && !nextMax(hand_copy, ng1_next).isEmpty()) {
+      return ng1;
+    }
+
+    if (!has_joker)
+      return CardSet();
+
     ng0.insert(JOKER);
     if (is_strongest(ng0)) {
       return ng0;
